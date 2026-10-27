@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "3M Consulting shared preset: one run a month, one PR for minor and patch updates, majors only after approval, no version younger than 7 days, nothing merged automatically. The monthly run spans the first three days of the month, for updates and lock file maintenance alike: Mend runs a repository that has not merged a Renovate PR yet only once a day, and the four-hour window of schedule:monthly would be missed most months.",
+  "description": "3M Consulting shared preset: one run a month, one PR for minor and patch updates, majors only after approval, no version younger than 7 days, nothing merged automatically. The monthly run spans the first three days of the month, for updates and lock file maintenance alike: Mend runs a repository that has not merged a Renovate PR yet only once a day, and the four-hour window of schedule:monthly would be missed most months. Outside those days Renovate leaves its open PRs alone (updateNotScheduled: false): every push to a PR branch costs a CI run on a plan with a monthly minute budget, so a PR that goes into conflict waits for the rebase checkbox or for the next month. Vulnerability PRs ignore the schedule.",
   "extends": [
     "config:best-practices",
     ":semanticCommits",
@@ -8,6 +8,7 @@
   ],
   "timezone": "Europe/Rome",
   "schedule": ["* * 1-3 * *"],
+  "updateNotScheduled": false,
   "lockFileMaintenance": {
     "schedule": ["* * 1-3 * *"]
   },
