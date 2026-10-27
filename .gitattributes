@@ -1,0 +1,2 @@
+# Line endings are LF everywhere, Windows with core.autocrlf included: Prettier and the shell scripts need it.
+* text=auto eol=lf
