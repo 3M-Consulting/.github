@@ -71,9 +71,9 @@ Le regole di questa sezione stanno in tre posti: il preset di Renovate [default.
 
 ### Cadenza
 
-- **Un giro al mese**, nei primi tre giorni del mese (ora di Roma). Ne escono una PR «non-major dependencies», con minor, patch, pin e SHA delle action insieme, e una PR di manutenzione del lock file.
-- **Fuori da quei tre giorni Renovate non tocca le sue PR**: ogni push su un ramo costa un giro di CI. Una PR finita in conflitto — succede alla seconda delle due, che toccano lo stesso lock file, quando si fonde la prima — si riallinea spuntando la casella di rebase nella PR, oppure al giro successivo.
-- **Un major è una migrazione**, e lo sono anche un minor di un pacchetto `0.x`, perché un intervallo `^0.8` non accetta la `0.9`, e un minor di Python (3.12 → 3.13), che cambia l'interprete. La PR si apre soltanto dopo l'approvazione nella Dependency Dashboard (la issue che Renovate tiene aperta in ogni repository): una per pacchetto, o una per gruppo quando i pacchetti escono insieme dallo stesso monorepo (per esempio quelli di Vue). Prima di approvare si leggono le note di rilascio e si cercano gli usi nel codice.
+- **Un giro al mese**, il primo del mese (ora di Roma). Ne escono una PR «non-major dependencies», con minor, patch, pin e SHA delle action insieme, e una PR di manutenzione del lock file.
+- **Fuori da quel giorno Renovate non tocca le sue PR**: ogni push su un ramo costa un giro di CI. Una PR finita in conflitto — succede alla seconda delle due, che toccano lo stesso lock file, quando si fonde la prima — si riallinea spuntando la casella di rebase nella PR, oppure al giro successivo.
+- **Un major è una migrazione**, e lo sono anche un minor di un pacchetto `0.x`, perché un intervallo `^0.8` non accetta la `0.9`, e un minor di Python (3.12 → 3.13), che cambia l'interprete. Fanno eccezione le release di questo repository (`3M-Consulting/.github`), che è codice nostro: minor e patch entrano nella PR mensile senza approvazione, così ogni repository prende al giro successivo una correzione della CI comune. La PR si apre soltanto dopo l'approvazione nella Dependency Dashboard (la issue che Renovate tiene aperta in ogni repository): una per pacchetto, o una per gruppo quando i pacchetti escono insieme dallo stesso monorepo (per esempio quelli di Vue). Prima di approvare si leggono le note di rilascio e si cercano gli usi nel codice.
 - Renovate non fonde niente da sé (`automerge: false`).
 
 ### Periodo di attesa di 7 giorni
@@ -83,10 +83,11 @@ Una versione entra soltanto 7 giorni dopo la pubblicazione: un pacchetto comprom
 - Renovate non propone la versione prima dei 7 giorni (`minimumReleaseAge` nel preset).
 - Il gestore di pacchetti non la risolve, dipendenze indirette comprese: pnpm con `minimumReleaseAge: 10080` (minuti) in `pnpm-workspace.yaml`, uv con `exclude-newer = "7 days"` sotto `[tool.uv]` in `pyproject.toml`.
 
-Due eccezioni, per le immagini Docker:
+Tre eccezioni:
 
-- Un digest nuovo per lo stesso tag — una ricostruzione della stessa versione, per esempio con le patch del sistema — aspetta 1 giorno. Docker Hub lo data con l'ultima pubblicazione del tag, e le immagini ufficiali si ripubblicano ogni pochi giorni: con 7 giorni non si aggiornerebbero mai.
+- Le immagini Docker aspettano 1 giorno, sia una versione nuova sia un digest nuovo per lo stesso tag. Docker Hub data ogni tag con la sua ultima pubblicazione, e le immagini ufficiali si ripubblicano ogni pochi giorni, con le patch del sistema: con 7 giorni non si aggiornerebbero mai.
 - Le immagini dei registri diversi da Docker Hub (GHCR, Artifact Registry e gli altri) non pubblicano una data di rilascio: si aggiornano senza attesa.
+- Le release di questo repository entrano senza attesa: sono codice nostro.
 
 ### Correzioni di sicurezza
 
