@@ -41,7 +41,7 @@ Due componenti, da referenziare sempre con lo **SHA completo** di un tag e la ve
 gh api repos/3M-Consulting/.github/commits/vX.Y.Z --jq .sha
 ```
 
-Renovate, col preset qui sopra, propone il tag nuovo al primo giro mensile, nella PR «non-major dependencies».
+Renovate, col preset qui sopra, propone un tag nuovo minor o patch al primo giro mensile, nella PR «non-major dependencies», senza attesa né approvazione: è codice nostro. Un tag major aspetta l'approvazione nella Dependency Dashboard, come ogni major.
 
 ### Controlli di igiene
 
@@ -101,7 +101,7 @@ jobs:
 | `working-directory` | `.`             | La cartella del progetto pnpm, relativa alla radice del repository     |
 | `node-version-file` | `.node-version` | Il file della versione di Node, relativo a `working-directory`         |
 | `cache-prefix`      | `pnpm-store-v1` | Prefisso della cache dello store: cambiarlo riparte da una cache vuota |
-| `install`           | `true`          | `false` si ferma al setup, senza `pnpm install --frozen-lockfile`      |
+| `install`           | `true`          | `false` installa solo pnpm e Node: niente cache dello store né install |
 
 ## Licenza
 

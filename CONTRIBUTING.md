@@ -28,7 +28,7 @@ Le issue si aprono dai moduli di [.github/ISSUE_TEMPLATE/](./.github/ISSUE_TEMPL
 | Apri un task                     | Lavoro che non cambia il comportamento: manutenzione, strumenti, documenti | —                 |
 | Registra un rilievo di sicurezza | Un gap di sicurezza o di conformità già noto                               | `security-review` |
 
-Una issue creata da riga di comando (`gh issue create`) non passa dal modulo: riporta le stesse sezioni, con gli stessi titoli, e la stessa etichetta. Le etichette proprie di un repository, come la gravità, e le sue milestone le definisce il suo `CONTRIBUTING.md`.
+Una issue creata da riga di comando (`gh issue create`) non passa dal modulo: riporta le stesse sezioni, con gli stessi titoli, e la stessa etichetta. Nei repository privati GitHub non blocca l'invio di un modulo con un campo obbligatorio vuoto o una conferma non spuntata: valgono lo stesso. Le etichette proprie di un repository, come la gravità, e le sue milestone le definisce il suo `CONTRIBUTING.md`.
 
 Una vulnerabilità sfruttabile non diventa una issue: segue [SECURITY.md](./SECURITY.md).
 
@@ -71,8 +71,8 @@ Le regole di questa sezione stanno in tre posti: il preset di Renovate [default.
 
 ### Cadenza
 
-- **Un giro al mese**, il primo del mese prima delle 4 (ora di Roma). Ne escono una PR «non-major dependencies», con minor, patch, pin e SHA delle action insieme, e una PR di manutenzione del lock file.
-- **Un major è una migrazione**, e lo è anche un minor di un pacchetto `0.x`, perché un intervallo `^0.8` non accetta la `0.9`. La PR si apre soltanto dopo l'approvazione nella Dependency Dashboard (la issue che Renovate tiene aperta in ogni repository), una per pacchetto. Prima di approvare si leggono le note di rilascio e si cercano gli usi nel codice.
+- **Un giro al mese**, nei primi tre giorni del mese (ora di Roma). Ne escono una PR «non-major dependencies», con minor, patch, pin e SHA delle action insieme, e una PR di manutenzione del lock file.
+- **Un major è una migrazione**, e lo sono anche un minor di un pacchetto `0.x`, perché un intervallo `^0.8` non accetta la `0.9`, e un minor di Python (3.12 → 3.13), che cambia l'interprete. La PR si apre soltanto dopo l'approvazione nella Dependency Dashboard (la issue che Renovate tiene aperta in ogni repository): una per pacchetto, o una per gruppo quando i pacchetti escono insieme dallo stesso monorepo (per esempio quelli di Vue). Prima di approvare si leggono le note di rilascio e si cercano gli usi nel codice.
 - Renovate non fonde niente da sé (`automerge: false`).
 
 ### Periodo di attesa di 7 giorni
@@ -82,7 +82,10 @@ Una versione entra soltanto 7 giorni dopo la pubblicazione: un pacchetto comprom
 - Renovate non propone la versione prima dei 7 giorni (`minimumReleaseAge` nel preset).
 - Il gestore di pacchetti non la risolve, dipendenze indirette comprese: pnpm con `minimumReleaseAge: 10080` (minuti) in `pnpm-workspace.yaml`, uv con `exclude-newer = "7 days"` sotto `[tool.uv]` in `pyproject.toml`.
 
-Le immagini su GHCR non pubblicano una data di rilascio: si aggiornano senza attesa.
+Due eccezioni, per le immagini Docker:
+
+- Un digest nuovo per lo stesso tag — una ricostruzione della stessa versione, per esempio con le patch del sistema — aspetta 1 giorno. Docker Hub lo data con l'ultima pubblicazione del tag, e le immagini ufficiali si ripubblicano ogni pochi giorni: con 7 giorni non si aggiornerebbero mai.
+- Le immagini dei registri diversi da Docker Hub (GHCR, Artifact Registry e gli altri) non pubblicano una data di rilascio: si aggiornano senza attesa.
 
 ### Correzioni di sicurezza
 
@@ -115,7 +118,7 @@ Si aggiunge con il comando del gestore — `pnpm add`, `uv add "<pacchetto>==<ve
 ### Le PR di Renovate
 
 - **«non-major dependencies» e manutenzione del lock**: CI verde, si fonde. Se dopo qualcosa si rompe, si annulla la PR con un revert e si apre una issue sul pacchetto colpevole.
-- **Major e minor di un `0.x`**: dopo l'approvazione la PR si tratta come ogni migrazione, con i test e la verifica a mano dei percorsi toccati.
+- **Major, minor di un `0.x` e minor di Python**: dopo l'approvazione la PR si tratta come ogni migrazione, con i test e la verifica a mano dei percorsi toccati.
 - **Vulnerabilità**: per prima, con la stessa regola della CI verde.
 
 ## Documentazione
