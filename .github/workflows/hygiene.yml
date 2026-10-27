@@ -1,0 +1,122 @@
+name: hygiene
+
+# Shared hygiene checks, called with `uses:` pinned to the SHA of a tag. The caller copies the
+# `types` of `pull_request`, the job `if` and the `concurrency` from the README: they are what
+# keeps an edit of the PR body from starting anything or cancelling the run in progress.
+# When called it always runs in full: a change of base repeats every check on the new range.
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  checks:
+    name: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # checkout of the history for gitleaks, actionlint and zizmor
+    steps:
+      - id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # gitleaks reads the commits of the range, so the history is needed.
+          fetch-depth: 0
+          persist-credentials: false
+
+      # PR: the commits between base and head. Push: those between `before` and the new SHA. With
+      # `before` all zeros (new branch) or missing from the history (force push) the whole history
+      # of the new SHA is scanned. An empty range is an error: a green gitleaks over zero commits
+      # proves nothing.
+      - name: Commit range
+        id: range
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+        run: |
+          case "$EVENT" in
+            pull_request) from="$PR_BASE"; to="$PR_HEAD" ;;
+            push) from="$PUSH_BEFORE"; to="$PUSH_AFTER" ;;
+            *) echo "::error::unhandled event: $EVENT"; exit 1 ;;
+          esac
+          sha='^[0-9a-f]{40}$'
+          if ! [[ "$to" =~ $sha ]]; then
+            echo "::error::invalid head SHA: $to"
+            exit 1
+          fi
+          if [ -z "$from" ] || [ "$from" = 0000000000000000000000000000000000000000 ]; then
+            opts="$to"
+          elif ! [[ "$from" =~ $sha ]]; then
+            echo "::error::invalid base SHA: $from"
+            exit 1
+          elif ! git cat-file -e "$from^{commit}" 2>/dev/null; then
+            echo "::warning::$from is not in the history (force push?): scanning the whole history of $to"
+            opts="$to"
+          else
+            opts="$from..$to"
+          fi
+          count=$(git rev-list --count "$opts")
+          echo "Range: $opts ($count commits)"
+          if [ "$count" -lt 1 ]; then
+            echo "::error::empty range: no commit to scan"
+            exit 1
+          fi
+          echo "log-opts=$opts" >> "$GITHUB_OUTPUT"
+
+      # gitleaks runs in its own container, started by this step and not as `uses: docker://`.
+      # As a Docker action GitHub sets HOME=/github/home: the image's `safe.directory` does not
+      # apply, git refuses the workspace (another owner), gitleaks prints one ERR line, scans zero
+      # commits and exits 0. Here `safe.directory` comes through environment variables, and the
+      # step fails on any ERR line, and on zero commits scanned when the range adds lines of text,
+      # the only ones gitleaks counts. The image is pinned to its digest rather than downloaded as
+      # a binary with a checksum: Renovate updates the digest (rule in renovate.json).
+      - name: Secrets in the commits (gitleaks)
+        shell: bash
+        env:
+          IMAGE: ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          LOG_OPTS: ${{ steps.range.outputs.log-opts }}
+        run: |
+          log="$RUNNER_TEMP/gitleaks.log"
+          set +e
+          docker run --rm -v "$GITHUB_WORKSPACE:/repo" \
+            -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0=/repo \
+            "$IMAGE" git "--log-opts=$LOG_OPTS" --redact --verbose --no-color --exit-code 1 /repo 2>&1 | tee "$log"
+          status=${PIPESTATUS[0]}
+          set -e
+          if grep -q -E '^[0-9]{1,2}:[0-9]{2}(AM|PM) ERR ' "$log"; then
+            echo "::error::gitleaks hit an error: the scan does not count"
+            exit 1
+          fi
+          scanned=$(grep -o -E '[0-9]+ commits scanned' "$log" | head -1 | cut -d' ' -f1 || true)
+          if [ -z "$scanned" ]; then
+            echo "::error::gitleaks printed no summary of the commits scanned (exit $status)"
+            exit 1
+          fi
+          if git log --no-merges --numstat --format= "$LOG_OPTS" | awk '$1 ~ /^[0-9]+$/ && $1 > 0 {f = 1} END {exit !f}' &&
+            [ "${scanned:-0}" -lt 1 ]; then
+            echo "::error::gitleaks scanned no commit, but the range adds lines"
+            exit 1
+          fi
+          exit "$status"
+
+      # From here on `!cancelled()`: each check reports its own result even when an earlier one is
+      # red, so one run's log lists everything that is wrong.
+      # For a `docker://` image the version is the tag itself, next to the digest.
+      - name: Workflow syntax (actionlint)
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
+        uses: docker://rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+        with:
+          args: -color
+
+      - name: Workflow security (zizmor)
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
+        uses: zizmorcore/zizmor-action@85b2b9fb8e3325e7a23d7d0a9d7ba5ae0f999e3e # v0.7.1
+        with:
+          # renovate: datasource=github-releases depName=zizmorcore/zizmor
+          version: 1.31.1
+          # Findings in the log and the exit code; no SARIF, which would not fail the job.
+          advanced-security: false
+          online-audits: true

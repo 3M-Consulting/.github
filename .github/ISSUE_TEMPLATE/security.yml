@@ -1,0 +1,139 @@
+name: Registra un rilievo di sicurezza
+description: Un gap di sicurezza o di conformità già noto, da un rapporto di audit o da una verifica interna.
+title: "[ID] "
+labels: ["security-review"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        **Una vulnerabilità sfruttabile non si apre qui**: segui
+        [SECURITY.md](https://github.com/3M-Consulting/.github/blob/main/SECURITY.md). Questo modulo
+        registra un rilievo già noto, con chi lo chiude e con quale prova. La gravità scelta qui
+        sotto non diventa un'etichetta da sola: dove il repository usa etichette di gravità, si
+        aggiungono a mano dopo l'invio.
+  - type: input
+    id: finding-id
+    attributes:
+      label: ID rilievo
+      description: L'identificativo nel rapporto di provenienza, oppure uno nuovo interno.
+      placeholder: C-01
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Fonte
+      description: Il rapporto e la versione da cui viene il rilievo, con il commit su cui è stato fatto.
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Gravità
+      description: >-
+        CRITICO = sfruttabile da un utente autenticato con privilegi minimi, oppure esposizione
+        diretta di credenziali o dati personali di terzi. ALTO = compromette la difesa in
+        profondità, la tracciabilità o la dimostrabilità. MEDIO = amplia la superficie di attacco o
+        determina una carenza documentale. BASSO = incide sulla buona tenuta della configurazione.
+      options:
+        - CRITICO
+        - ALTO
+        - MEDIO
+        - BASSO
+    validations:
+      required: true
+  - type: dropdown
+    id: treatment
+    attributes:
+      label: Opzione di trattamento (ISO 31000, punto 6.5.2)
+      options:
+        - Rimuovere la fonte di rischio
+        - Modificare la verosimiglianza
+        - Modificare le conseguenze
+        - Ritenere il rischio (va registrato nel registro dei rischi)
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Spiegazione
+      description: >-
+        Che cosa succede in concreto, senza gergo tecnico: la legge anche chi non sviluppa, e in
+        sede di verifica l'organismo di certificazione.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema
+      description: La descrizione tecnica del difetto.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidenza
+      description: Riferimenti puntuali nel codice o nella configurazione, nella forma `file:riga`.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impatto
+      description: Che cosa può accadere e a chi, se il rilievo non viene sanato.
+    validations:
+      required: true
+  - type: input
+    id: iso-controls
+    attributes:
+      label: Controlli ISO/IEC 27001:2022
+      placeholder: A.5.15, A.8.3
+    validations:
+      required: true
+  - type: input
+    id: nist
+    attributes:
+      label: Approfondimento NIST
+      description: Controlli SP 800-53 Rev. 5 o di un'altra pubblicazione applicabile.
+      placeholder: SP 800-53 Rev. 5 - AC-3, AC-6
+  - type: textarea
+    id: actions
+    attributes:
+      label: Azioni correttive raccomandate
+      description: Un elenco puntato, un'azione per voce.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criteri di accettazione
+      description: >-
+        Le condizioni che chiudono il rilievo, osservabili da un terzo e non dichiarazioni di
+        intenti: un elenco puntato, senza caselle. L'evidenza di ogni criterio va nella PR, sezione
+        «Come è stato verificato».
+    validations:
+      required: true
+  - type: textarea
+    id: verify
+    attributes:
+      label: Come verificare
+      description: >-
+        I comandi, le interrogazioni o le prove che dimostrano la chiusura. Le interrogazioni sul
+        database sono di sola lettura.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: residual
+    attributes:
+      label: Rischio residuo e note
+      description: Che cosa resta scoperto dopo l'intervento, e i legami con altri rilievi.
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Conferme
+      options:
+        - label: Non è una vulnerabilità sfruttabile (per quella vale SECURITY.md).
+          required: true
+        - label: Non ho incollato dati personali di clienti o dipendenti, né credenziali.
+          required: true

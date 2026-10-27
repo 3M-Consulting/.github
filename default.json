@@ -1,0 +1,57 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "3M Consulting shared preset: one run a month, one PR for minor and patch updates, majors only after approval, no version younger than 7 days, nothing merged automatically.",
+  "extends": [
+    "config:best-practices",
+    ":semanticCommits",
+    "schedule:monthly",
+    ":maintainLockFilesMonthly",
+    "helpers:pinGitHubActionDigestsToSemver"
+  ],
+  "timezone": "Europe/Rome",
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "automerge": false,
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "dependencyDashboardApproval": false,
+    "minimumReleaseAge": "7 days"
+  },
+  "packageRules": [
+    {
+      "description": "A major is a migration, not an update: its PR opens only after approval in the Dependency Dashboard, and is verified on its own.",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "In a 0.x package a minor can break as a major does (SemVer; a ^0.8 range does not accept 0.9): it waits for approval in the Dependency Dashboard and gets a PR of its own.",
+      "matchUpdateTypes": ["minor"],
+      "matchCurrentVersion": "/^v?0\\./",
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Patches, pins and action SHAs in one PR: every PR pays for a CI run, and several PRs on the same lock file conflict with each other.",
+      "matchUpdateTypes": ["patch", "digest", "pin", "pinDigest"],
+      "groupName": "non-major dependencies",
+      "groupSlug": "non-major"
+    },
+    {
+      "description": "Minors join the same PR, except those of a 0.x package (rule above).",
+      "matchUpdateTypes": ["minor"],
+      "matchCurrentVersion": "!/^v?0\\./",
+      "groupName": "non-major dependencies",
+      "groupSlug": "non-major"
+    },
+    {
+      "description": "A version enters 7 days after it was published, whatever the registry: a compromised release is usually found and pulled within days. This replaces the 3 days config:best-practices sets for npm. The package managers apply the same 7 days to what they resolve into the lock file, transitive dependencies included (pnpm minimumReleaseAge, uv exclude-newer). Pins and lock file maintenance are left out: a pin freezes what a reference already points to, and lock file maintenance has no single release date to check.",
+      "matchUpdateTypes": ["major", "minor", "patch", "digest"],
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "GHCR publishes no release dates: with the default timestamp-required these images would wait for ever, so they move without the age check.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/**"],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+name: Proponi una funzionalità
+description: Una capacità nuova, o la modifica di una esistente.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Prima il bisogno, poi la soluzione. Il titolo descrive l'esito atteso, non l'attività; le
+        regole complete sono nella sezione Issue di
+        [CONTRIBUTING.md](https://github.com/3M-Consulting/.github/blob/main/CONTRIBUTING.md).
+  - type: textarea
+    id: need
+    attributes:
+      label: Esigenza
+      description: Quale problema di lavoro va risolto, e per chi. Il bisogno, non la soluzione.
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: Come si fa oggi
+      description: Il procedimento attuale, comprese le operazioni svolte a mano o fuori dal sistema.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposta
+      description: Come potrebbe funzionare, se c'è già un'idea; le alternative scartate e perché.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criteri di accettazione
+      description: >-
+        Un elenco puntato, senza caselle, di criteri verificabili — un comando, un test, un esito
+        osservabile. L'evidenza di ogni criterio va nella PR, sezione «Come è stato verificato».
+    validations:
+      required: true
+  - type: textarea
+    id: impacts
+    attributes:
+      label: Impatti da valutare
+      description: >-
+        Per esempio: modifiche allo schema del database, dati e pratiche già esistenti, permessi,
+        testi per l'utente.
+  - type: textarea
+    id: files
+    attributes:
+      label: File toccati e documento da aggiornare
+      description: I file che cambieranno e il documento che possiede l'informazione toccata.
