@@ -1,0 +1,86 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "3M Consulting shared preset: one run a month, one PR for minor and patch updates, majors only after approval, versions at least 7 days old (1 day for Docker images, none for this repository's own releases), nothing merged automatically. The monthly run takes the whole first day of the month, for updates and lock file maintenance alike: Mend runs a repository that has not merged a Renovate PR yet only once a day, and would miss the four-hour window of schedule:monthly most months; a wider window would push to the open PRs, or open new ones, on each later day, and every push costs a CI run on a plan with a monthly minute budget. For the same reason Renovate leaves its open PRs alone outside that day (updateNotScheduled: false): a PR that goes into conflict waits for the rebase checkbox or for the next month. Vulnerability PRs ignore the schedule.",
+  "extends": [
+    "config:best-practices",
+    ":semanticCommits",
+    "helpers:pinGitHubActionDigestsToSemver"
+  ],
+  "timezone": "Europe/Rome",
+  "schedule": ["* * 1 * *"],
+  "updateNotScheduled": false,
+  "lockFileMaintenance": {
+    "schedule": ["* * 1 * *"]
+  },
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "automerge": false,
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "dependencyDashboardApproval": false,
+    "minimumReleaseAge": "7 days"
+  },
+  "packageRules": [
+    {
+      "description": "A major is a migration, not an update: its PR opens only after approval in the Dependency Dashboard, and is verified on its own.",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "In a 0.x package a minor can break as a major does (SemVer; a ^0.8 range does not accept 0.9): it waits for approval in the Dependency Dashboard and gets a PR of its own. This repository's own releases are the exception (last rule).",
+      "matchUpdateTypes": ["minor"],
+      "matchCurrentVersion": "/^v?0\\./",
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "A Python minor (3.12 to 3.13) changes the interpreter, and Python removes deprecated features in minors (PEP 387): it waits for approval like a major, whether it comes from a Docker image, requires-python or setup-python (whose versions come from actions/python-versions).",
+      "matchPackageNames": ["python", "actions/python-versions"],
+      "matchUpdateTypes": ["minor"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Patches, pins and digests in one PR: every PR pays for a CI run, and several PRs on the same lock file conflict with each other.",
+      "matchUpdateTypes": ["patch", "digest", "pin", "pinDigest"],
+      "groupName": "non-major dependencies",
+      "groupSlug": "non-major"
+    },
+    {
+      "description": "Minors join the same PR, except those of a 0.x package and of Python (rules above).",
+      "matchUpdateTypes": ["minor"],
+      "matchCurrentVersion": "!/^v?0\\./",
+      "matchPackageNames": ["!python", "!actions/python-versions"],
+      "groupName": "non-major dependencies",
+      "groupSlug": "non-major"
+    },
+    {
+      "description": "A version enters 7 days after it was published, whatever the registry: a compromised release is usually found and pulled within days. This replaces the 3 days config:best-practices sets for npm. The package managers apply the same 7 days to what they resolve into the lock file, transitive dependencies included (pnpm minimumReleaseAge, uv exclude-newer). Pins and lock file maintenance are left out: a pin freezes what a reference already points to, and lock file maintenance has no single release date to check.",
+      "matchUpdateTypes": ["major", "minor", "patch", "digest"],
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Docker images wait 1 day, not 7. Docker Hub dates every tag, and so every version and every digest, by the tag's last push, and official images are pushed again every few days (python:3.12-slim every 4-6 days in October 2026): with 7 days they would never update, and an approved Python minor would never open. One day still catches a broken push. Majors and Python minors still wait for approval.",
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["major", "minor", "patch", "digest"],
+      "minimumReleaseAge": "1 day"
+    },
+    {
+      "description": "Registries other than Docker Hub (GHCR, GCR, Artifact Registry, Quay, ECR…) publish no release dates: with the default timestamp-required their images would wait for ever, so they move without the age check.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "/^[^/]+\\.[^/]+\\//",
+        "!docker.io/**",
+        "!index.docker.io/**"
+      ],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "description": "This repository's own workflows and actions are our code: their minor and patch releases join the monthly PR without approval or waiting, so every repository picks up a fix of the shared CI at the next run. A major still waits for approval.",
+      "matchPackageNames": ["3M-Consulting/.github"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "dependencyDashboardApproval": false,
+      "minimumReleaseAge": null,
+      "groupName": "non-major dependencies",
+      "groupSlug": "non-major"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+name: Apri un task
+description: Lavoro che non cambia il comportamento — manutenzione, strumenti, documenti, decisioni.
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Il titolo descrive l'esito atteso, non l'attività. Le regole complete sono nella sezione
+        Issue di [CONTRIBUTING.md](https://github.com/3M-Consulting/.github/blob/main/CONTRIBUTING.md).
+  - type: textarea
+    id: context
+    attributes:
+      label: Contesto
+      description: >-
+        Che cosa c'è oggi. In un repository di codice almeno un percorso reale in forma
+        `file:riga`; altrove un link o un fatto verificabile.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Esito atteso
+      description: Che cosa è vero quando la issue è chiusa.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criteri di accettazione
+      description: >-
+        Un elenco puntato, senza caselle, di criteri verificabili — un comando, un test, un esito
+        osservabile. L'evidenza di ogni criterio va nella PR, sezione «Come è stato verificato».
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: File toccati e documento da aggiornare
+      description: I file che cambieranno e il documento che possiede l'informazione toccata.

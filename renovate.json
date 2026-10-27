@@ -1,0 +1,24 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["local>3M-Consulting/.github"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "The gitleaks image in hygiene.yml sits in an environment variable, not in a uses: line, so no built-in manager finds it. Tag and digest move together.",
+      "managerFilePatterns": ["/^\\.github/workflows/hygiene\\.yml$/"],
+      "matchStrings": [
+        "IMAGE: (?<depName>ghcr\\.io/gitleaks/gitleaks):(?<currentValue>v[^@\\s]+)@(?<currentDigest>sha256:[0-9a-f]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Versions marked by a «# renovate:» comment on the line above, like the zizmor version handed to zizmor-action.",
+      "managerFilePatterns": ["/^\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>\\S+)\\s+[a-z-]+: (?<currentValue>\\S+)"
+      ],
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    }
+  ]
+}

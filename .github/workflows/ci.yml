@@ -1,0 +1,30 @@
+name: ci
+
+# The repository checks its own workflows with its own hygiene workflow: the same call as the
+# repositories that use it (see README, "CI riusabile"), plus the push to main, which also checks
+# the commits that arrived without a PR.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+
+permissions: {}
+
+# Each push has a group of its own: within one group only one run waits, and a cancelled
+# intermediate one would leave its range never scanned. An edit that changes the PR body only also
+# has a group of its own: it never cancels the run in progress.
+concurrency:
+  group: ${{ github.event_name == 'push' && format('push-{0}', github.sha) || ((github.event.action == 'edited' && !github.event.changes.base) && format('noop-{0}', github.run_id) || format('hygiene-{0}', github.ref)) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  hygiene:
+    # Only the PR title or body changed: nothing to check.
+    if: github.event.action != 'edited' || github.event.changes.base
+    # `./` rather than the `$/` syntax zizmor suggests: actionlint 1.7.12 does not know it and would
+    # report an error. GitHub reads a reusable workflow of the same repository from the event's
+    # commit, not from the runner's disk.
+    uses: ./.github/workflows/hygiene.yml # zizmor: ignore[self-repository]
+    permissions:
+      contents: read # what the `checks` job of hygiene.yml asks for, nothing more

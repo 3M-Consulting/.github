@@ -1,0 +1,65 @@
+name: setup-node-pnpm
+description: >-
+  Installs pnpm (version from the packageManager field of package.json) and Node (version from
+  .node-version), restores the pnpm store from the cache and installs the dependencies.
+
+inputs:
+  working-directory:
+    description: >-
+      The folder of the pnpm project, relative to the repository root: package.json,
+      pnpm-lock.yaml and the Node version file live there.
+    default: .
+  node-version-file:
+    description: The file the Node version is read from, relative to working-directory.
+    default: .node-version
+  cache-prefix:
+    description: >-
+      Prefix of the cache key of the pnpm store. Changing it starts from an empty cache: it serves
+      to measure the worst case or to drop a broken cache.
+    default: pnpm-store-v1
+  install:
+    description: >-
+      'true' restores the pnpm store and runs pnpm install --frozen-lockfile; 'false' stops after
+      installing pnpm and Node.
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    # No `version:`: the only source is `packageManager` in package.json. A hardcoded version would
+    # win unconditionally and keep CI on an old pnpm after that field moves.
+    - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      with:
+        package_json_file: ${{ inputs.working-directory }}/package.json
+
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version-file: ${{ inputs.working-directory }}/${{ inputs.node-version-file }}
+
+    # The cache only comes with the install. Without one, the post step would save under the
+    # current lock file's key a store restored from an older one: every later job would hit that
+    # key exactly, never save again, and download the difference on each run.
+    # A composite action takes no `defaults.run` from the calling job: the directory is spelled
+    # out on every step that runs pnpm.
+    - name: pnpm store path
+      id: store
+      if: inputs.install == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+    # The exact key changes with the lock file; `restore-keys` starts from the newest store with
+    # the same prefix, and pnpm downloads only what is missing.
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      if: inputs.install == 'true'
+      with:
+        path: ${{ steps.store.outputs.path }}
+        key: ${{ inputs.cache-prefix }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles(format('{0}/pnpm-lock.yaml', inputs.working-directory)) }}
+        restore-keys: |
+          ${{ inputs.cache-prefix }}-${{ runner.os }}-${{ runner.arch }}-
+
+    - name: Dependencies
+      if: inputs.install == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: pnpm install --frozen-lockfile

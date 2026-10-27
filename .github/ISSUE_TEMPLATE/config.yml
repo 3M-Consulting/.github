@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Segnalare una vulnerabilità
+    url: https://github.com/3M-Consulting/.github/blob/main/SECURITY.md
+    about: Una vulnerabilità non si apre come issue. Qui è spiegato come segnalarla in privato.
+  - name: Regole di lavoro
+    url: https://github.com/3M-Consulting/.github/blob/main/CONTRIBUTING.md
+    about: Issue, branch, pull request, commit e dipendenze.
