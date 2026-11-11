@@ -92,7 +92,26 @@ Tre eccezioni:
 ### Correzioni di sicurezza
 
 - Renovate apre una PR per ogni vulnerabilità nota di una dipendenza diretta (avvisi di GitHub e database OSV) fuori dal giro mensile e senza approvazione, appena la versione corretta ha 7 giorni: a quel punto anche pnpm e uv la accettano, e il lock si aggiorna da solo. Si guarda prima delle altre.
-- Le vulnerabilità delle dipendenze indirette le mostra l'audit della CI (`pip-audit`, `pnpm audit`, dove il repository lo esegue) e le chiude la manutenzione mensile del lock.
+- Le vulnerabilità delle dipendenze indirette le trovano Dependabot e `osv-scanner` nella CI del repository, dove c'è: fa fallire la PR che modifica un lock e ne introduce una nuova, e il primo di ogni mese fa fallire la scansione di `main` se una vulnerabilità non è né corretta né in eccezione, o se un'eccezione è scaduta. Le chiude la manutenzione mensile del lock.
+
+**Tempi di correzione.** Il termine decorre dal giorno in cui la vulnerabilità è stata trovata (l'avviso di Dependabot o la scansione mensile):
+
+| Vulnerabilità | Corretta entro |
+|---|---|
+| Nel catalogo KEV della CISA, o comunque sfruttata, e raggiungibile in produzione | 3 giorni, con il canale d'emergenza qui sotto |
+| Critica o alta | 30 giorni |
+| Media | 90 giorni |
+| Bassa | 180 giorni |
+
+**Prima si guarda se è raggiungibile, poi se esiste una correzione:**
+
+1. non è in ciò che si rilascia (solo strumenti di compilazione, di test o di sviluppo), oppure il codice vulnerabile non è sul percorso eseguito → eccezione, al massimo 180 giorni;
+2. è raggiungibile e non esiste una versione corretta → eccezione, al massimo 90 giorni, poi si riesamina;
+3. è raggiungibile ed esiste una versione corretta → si corregge entro il termine della tabella.
+
+**Eccezioni.** Una vulnerabilità che non si corregge prima della scansione mensile successiva va nell'`osv-scanner.toml` accanto al lock: `id`, `reason` (lo stato VEX, per esempio `component_not_present`, e una frase) e `effectiveUntil`, il primo di un mese non oltre il giorno in cui è stata trovata più il termine della sua classe. Così la scansione mensile diventa rossa soltanto per una vulnerabilità che nessuno ha classificato o per una oltre il termine. Rinnovare un'eccezione vuol dire classificarla di nuovo.
+
+Fonti: i termini da 30 a 180 giorni sono quelli del monitoraggio continuo di FedRAMP; i 3 giorni per le vulnerabilità sfruttate vengono dalla direttiva della CISA [BOD 26-04](https://www.cisa.gov/news-events/directives) e dal suo [catalogo KEV](https://www.cisa.gov/known-exploited-vulnerabilities-catalog).
 
 **Canale d'emergenza, facoltativo.** Per avere una correzione prima dei 7 giorni si apre un'eccezione per quel solo pacchetto, e la si toglie trascorsi i 7 giorni:
 
